@@ -73,6 +73,12 @@ The last step is to display data in a comprehensive way, using different plots f
 
 ![](https://github.com/isaiapedro/music-dashboard/blob/main/assets/homepage2.png)
 
+<br>
+
+![](https://github.com/isaiapedro/music-dashboard/blob/main/assets/homepage3.png)
+
+<br>
+
 ## Conclusion
 
 Thanks for reading up until here. I had a ton of fun doing this project and got a lot of useful insights on APIs, Python scripts and how to work with Streamlit applications.
