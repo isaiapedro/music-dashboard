@@ -32,7 +32,7 @@ def extract_music():
 
     data = response.json()
 
-    #current album
+    # current album
     current_album = data['currentAlbum']
 
     artist = current_album['artist']
