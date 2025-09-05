@@ -131,7 +131,7 @@ if not df2.empty and 'decade' in df2.columns:
 
 if not plot_df_decades.empty:
     # Generate image paths for each decade, assuming they are in an 'assets' folder
-    plot_df_decades['image_path'] = plot_df_decades['decade'].apply(lambda d: f"assets/{d}.jpg")
+    plot_df_decades['image_path'] = plot_df_decades['decade'].apply(lambda d: f"../assets/{d}.jpg")
 
     # Check if all decade images exist, otherwise fallback to a bar chart
     fallback_to_bar_decades = False
