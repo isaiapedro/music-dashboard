@@ -36,8 +36,7 @@ This is the first part of a project to show data in a comprehensive way using th
 
 <br/>
 
-The data was used via an API from the website [www.1001albumsgenerator.com](www.1001albumsgenerator.com). The collected data was cleaned using two Json files, for the current album that's being used and the previous albums on the
-user history section. Some transformations were made and the data was stored in the same Json files. Then the data was display using Streamlit and Plotly libraries.
+The data was used via an API from the website [www.1001albumsgenerator.com](https://1001albumsgenerator.com/). I used a cronjob with github actions to gatter data from the API source and store in local Json files. The data runs through a ETL pipeline and the cleaned json file was display using Streamlit and Plotly libraries.
 
 <br/>
 
@@ -64,7 +63,7 @@ The last step is to display data in a comprehensive way, using different plots f
 
 ## Results
 
-**Images of the application that can be acessed with [this link](https://churn-dash.streamlit.app/).**
+**Images of the application that can be acessed with [this link](https://1001-albums.streamlit.app/).**
 
 ![](https://github.com/isaiapedro/music-dashboard/blob/main/assets/homepage1.png)
 
