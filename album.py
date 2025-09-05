@@ -129,9 +129,8 @@ def load_music(df1, df2):
     """
     Loads transformed data into a PostgreSQL database.
     """
-
     try:
-        logging.info(f"Loading {len(df1 + df2)} rows into json file...")
+        logging.info("Loading rows into json file...")
         df1.to_json('current_album.json', orient='records', lines=True)
         df2.to_json('albums.json', orient='records', lines=True)
         logging.info("Data loaded into 'current_album.json' successfully.")
