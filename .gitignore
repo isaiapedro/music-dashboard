@@ -2,7 +2,5 @@
 /julia/*
 /log.txt
 /get_data.ipynb
-/albums.json
-/current_album.json
 /.vscode
 /.vscode/*
