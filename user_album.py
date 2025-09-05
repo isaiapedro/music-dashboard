@@ -4,10 +4,8 @@ import requests
 import datetime
 
 file = open("log.txt", "a")
-file.write(f"Admin Task executed at {datetime.datetime.now()}\n")
+file.write(f"User Task executed at {datetime.datetime.now()}\n")
 file.close()
-
-PROJECT_ID = "um-ano-e-meio-de-musica"
 
 # Logging configuration
 logging.basicConfig(
@@ -15,10 +13,9 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-
-def extract_music():
+def extract_music(PROJECT_ID):
     """
-    Extracts data from the API and saves it to a JSON file.
+    Extracts data from the API and returns it as a DataFrame.
     """
 
     logging.info("Requesting API data...")
@@ -59,8 +56,6 @@ def extract_music():
 
     logging.info(f"Extracted data for current album: {name} by {artist}")
 
-    current.to_json('current_album.json', orient='records', lines=True)
-
     # listening history
     history = pd.DataFrame(data['history'])
 
@@ -83,18 +78,18 @@ def extract_music():
     albums_df['review'] = history['review']
     albums_df['youtubeMusicId'] = past_albums['youtubeMusicId']
 
-    albums_df.to_json('albums.json', orient='records', lines=True)
-
     logging.info("Data extracted and saved to JSON files successfully.")
 
+    return current, albums_df
 
-def transform_music():
+
+def transform_music(current, albums_df):
     """
     Applies transformations to the data pulled from XComs.
     """
     logging.info("Transforming data...")
-    df1 = pd.read_json("current_album.json", lines=True)
-    df2 = pd.read_json("albums.json", lines=True)
+    df1 = current
+    df2 = albums_df
     logging.info(f"Applying transformations to {len(df2) + len(df1)} rows...")
 
     # Convert list columns to comma-separated strings
@@ -125,21 +120,30 @@ def transform_music():
     return df1, df2
 
 
-def load_music(df1, df2):
+def load_music(project_name):
     """
     Loads transformed data into a PostgreSQL database.
     """
 
+    PROJECT_ID = project_name.lower().replace(" ", "-")
+
     try:
-        logging.info(f"Loading {len(df1 + df2)} rows into json file...")
-        df1.to_json('current_album.json', orient='records', lines=True)
-        df2.to_json('albums.json', orient='records', lines=True)
-        logging.info("Data loaded into 'current_album.json' successfully.")
+        logging.info(f"Starting ETL process for project: {project_name}")
+        current, albums_df = extract_music(PROJECT_ID)
+        logging.info("Extracted data successfully.")
     except Exception as e:
-        logging.error(f"Failed to load data into json file: {e}")
+        logging.error(f"Failed to extract data for project: {project_name}. Error: {e}")
+        return
 
+    try:
+        logging.info("Transforming data...")
+        df1, df2 = transform_music(current, albums_df)
+    except Exception as e:
+        logging.error(f"Failed to transform data. Error: {e}")
+        return
 
-if __name__ == "__main__":
-    extract_music()
-    transformed_df1, transformed_df2 = transform_music()
-    load_music(transformed_df1, transformed_df2)
+    try:
+        logging.info(f"Loading {len(df1 + df2)} rows into application project")
+        return df1, df2
+    except Exception as e:
+        logging.error(f"Failed to load data into application project. Error: {e}")
