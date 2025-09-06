@@ -1,7 +1,20 @@
+import numpy as np
 import pandas as pd
 import logging
 import requests
 import datetime
+import psycopg2
+from psycopg2.extensions import register_adapter, AsIs
+register_adapter(np.int64, AsIs)
+
+hostname = 'localhost'
+database = 'music-app'
+username = 'postgres'
+pwd = '4B3questnloot'
+port_id = 5432
+
+conn = None
+cur = None
 
 file = open("log.txt", "a")
 file.write(f"Admin Task executed at {datetime.datetime.now()}\n")
@@ -59,8 +72,6 @@ def extract_music():
 
     logging.info(f"Extracted data for current album: {name} by {artist}")
 
-    current.to_json('current_album.json', orient='records', lines=True)
-
     # listening history
     history = pd.DataFrame(data['history'])
 
@@ -83,18 +94,16 @@ def extract_music():
     albums_df['review'] = history['review']
     albums_df['youtubeMusicId'] = past_albums['youtubeMusicId']
 
-    albums_df.to_json('albums.json', orient='records', lines=True)
+    logging.info("Data extracted and saved sucessfully.")
 
-    logging.info("Data extracted and saved to JSON files successfully.")
+    return current, albums_df
 
 
-def transform_music():
+def transform_music(df1, df2):
     """
     Applies transformations to the data pulled from XComs.
     """
     logging.info("Transforming data...")
-    df1 = pd.read_json("current_album.json", lines=True)
-    df2 = pd.read_json("albums.json", lines=True)
     logging.info(f"Applying transformations to {len(df2) + len(df1)} rows...")
 
     # Convert list columns to comma-separated strings
@@ -130,15 +139,119 @@ def load_music(df1, df2):
     Loads transformed data into a PostgreSQL database.
     """
     try:
-        logging.info("Loading rows into json file...")
-        df1.to_json('current_album.json', orient='records', lines=True)
-        df2.to_json('albums.json', orient='records', lines=True)
-        logging.info("Data loaded into 'current_album.json' successfully.")
+        conn = psycopg2.connect(
+            host=hostname,
+            dbname=database,
+            user=username,
+            password=pwd,
+            port=port_id
+        )
+
+        cur = conn.cursor()
+
+        logging.info("Connected to database successfully.")
+
+        # Drop tables if they exist
+        drop_script = '''
+        DROP TABLE IF EXISTS current_album;
+        DROP TABLE IF EXISTS albums;
+        '''
+        cur.execute(drop_script)
+        conn.commit()
+
+        logging.info("Dropped 'current_album' and 'albums' tables if they existed.")
+
+        # Create tables if they don't exist
+        create_script = '''
+        CREATE TABLE IF NOT EXISTS current_album (
+            artist VARCHAR(255),
+            artistOrigin VARCHAR(255),
+            images VARCHAR(255),
+            genres VARCHAR(255),
+            subGenres VARCHAR(255),
+            name VARCHAR(255),
+            releaseDate int,
+            youtubeMusicId VARCHAR(255),
+            spotifyId VARCHAR(255)
+        )
+        '''
+        cur.execute(create_script)
+
+        conn.commit()
+
+        logging.info("Created 'current_album' table if it didn't exist.")
+
+        insert_script = 'INSERT INTO current_album (artist, artistOrigin, images, genres, subGenres, name, releasedate, youtubemusicid, spotifyid) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+
+        insert_value = (
+            df1['artist'].iloc[0],
+            df1['artistOrigin'].iloc[0],
+            df1['images'].iloc[0],
+            df1['genres'].iloc[0],
+            df1['subGenres'].iloc[0],
+            df1['name'].iloc[0],
+            df1['releaseDate'].iloc[0],
+            df1['youtubeMusicId'].iloc[0],
+            df1['spotifyId'].iloc[0]
+        )
+
+        cur.execute(insert_script, insert_value)
+        conn.commit()
+
+        logging.info("Inserted data into 'current_album' table.")
+
+        create_script = '''
+        CREATE TABLE IF NOT EXISTS albums (
+            artist VARCHAR(255),
+            name VARCHAR(255),
+            artistOrigin VARCHAR(255),
+            releaseDate VARCHAR(255),
+            images VARCHAR(255),
+            allGenres VARCHAR(255),
+            streak float,
+            rating INT,
+            globalRating float,
+            review TEXT,
+            youtubeMusicId VARCHAR(255)
+        )
+        '''
+        cur.execute(create_script)
+        conn.commit()
+
+        logging.info("Created 'albums' table if it didn't exist.")
+
+        insert_script = 'INSERT INTO albums (artist, name, artistOrigin, releaseDate, images, allGenres, streak, rating, globalRating, review, youtubeMusicId) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+
+        for _, row in df2.iterrows():
+            insert_value = (
+                row['artist'],
+                row['name'],
+                row['artistOrigin'],
+                row['releaseDate'],
+                row['images'],
+                row['allGenres'],
+                row['streak'],
+                row['rating'],
+                row['globalRating'],
+                row['review'],
+                row['youtubeMusicId']
+            )
+            cur.execute(insert_script, insert_value)
+            conn.commit()
+
+        logging.info("Inserted data into 'albums' table.")
+
     except Exception as e:
-        logging.error(f"Failed to load data into json file: {e}")
+        logging.error(f"Failed to load data to database: {e}")
+    finally:
+        if cur is not None:
+            cur.close()
+        if conn is not None:
+            conn.close()
 
 
 if __name__ == "__main__":
-    extract_music()
-    transformed_df1, transformed_df2 = transform_music()
+
+    df1, df2 = extract_music()
+    transformed_df1, transformed_df2 = transform_music(df1, df2)
     load_music(transformed_df1, transformed_df2)

@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from collections import Counter
 import math
 from PIL import Image
+import psycopg2.extras
 
 st.markdown("""
     <style>
@@ -31,14 +32,46 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Load datasets
-# Current Album data
-df1 = pd.read_json('current_album.json', lines=True)
-df1.columns = df1.columns.str.strip().str.lower()
+# Load datasets from PostgreSQL
 
-# Past Albums data
-df2 = pd.read_json("albums.json", lines=True)
-df2.columns = df2.columns.str.strip().str.lower()
+hostname = 'localhost'
+database = 'music-app'
+username = 'postgres'
+pwd = '4B3questnloot'
+port_id = 5432
+
+conn = None
+cur = None
+
+try:
+    conn = psycopg2.connect(
+        host=hostname,
+        dbname=database,
+        user=username,
+        password=pwd,
+        port=port_id
+    )
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cur.execute('SELECT * FROM current_album')
+    df1_dict = cur.fetchall()
+    cur.execute('SELECT * FROM albums')
+    df2_dict = cur.fetchall()
+
+    df1 = []
+    for row in df1_dict:
+        df1.append(dict(row))
+    df2 = []
+    for row in df2_dict:
+        df2.append(dict(row))
+
+    df1 = pd.DataFrame(df1)
+    df2 = pd.DataFrame(df2)
+
+    cur.close()
+    conn.close()
+except Exception as error:
+    print(error)
+
 
 # Calculate the difference between personal and global ratings
 df2['rating_diff'] = df2['rating'] - df2['globalrating']

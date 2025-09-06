@@ -13,6 +13,7 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+
 def extract_music(PROJECT_ID):
     """
     Extracts data from the API and returns it as a DataFrame.
