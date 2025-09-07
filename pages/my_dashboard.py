@@ -43,6 +43,9 @@ port_id = 5432
 conn = None
 cur = None
 
+df1 = []
+df2 = []
+
 try:
     conn = psycopg2.connect(
         host=hostname,
@@ -57,10 +60,9 @@ try:
     cur.execute('SELECT * FROM albums')
     df2_dict = cur.fetchall()
 
-    df1 = []
     for row in df1_dict:
         df1.append(dict(row))
-    df2 = []
+    
     for row in df2_dict:
         df2.append(dict(row))
 
