@@ -34,12 +34,6 @@ st.markdown("""
 
 # Load datasets from PostgreSQL
 
-hostname = 'localhost'
-database = 'music-app'
-username = 'postgres'
-pwd = '4B3questnloot'
-port_id = 5432
-
 conn = None
 cur = None
 
@@ -47,18 +41,11 @@ df1 = []
 df2 = []
 
 try:
-    conn = psycopg2.connect(
-        host=hostname,
-        dbname=database,
-        user=username,
-        password=pwd,
-        port=port_id
-    )
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    cur.execute('SELECT * FROM current_album')
-    df1_dict = cur.fetchall()
-    cur.execute('SELECT * FROM albums')
-    df2_dict = cur.fetchall()
+    conn = st.connection("postgresql", type="sql")
+    
+    df1_dict = conn.query('SELECT * FROM current_album')
+    
+    df2_dict = conn.query('SELECT * FROM albums')
 
     for row in df1_dict:
         df1.append(dict(row))
@@ -66,8 +53,6 @@ try:
     for row in df2_dict:
         df2.append(dict(row))
 
-    cur.close()
-    conn.close()
 except Exception as error:
     print(error)
 
