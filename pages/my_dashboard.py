@@ -66,14 +66,13 @@ try:
     for row in df2_dict:
         df2.append(dict(row))
 
-    df1 = pd.DataFrame(df1)
-    df2 = pd.DataFrame(df2)
-
     cur.close()
     conn.close()
 except Exception as error:
     print(error)
 
+df1 = pd.DataFrame(df1)
+df2 = pd.DataFrame(df2)
 
 # Calculate the difference between personal and global ratings
 df2['rating_diff'] = df2['rating'] - df2['globalrating']
